@@ -15,9 +15,9 @@ namespace httpserver
 
 		public static string RedirectorResponse(HttpListenerRequest request)
 		{
-			string temp = string.Format("{0}\"host\":\"{2}\", \"port\":{3}{1}", "{", "}", cloudSrvHost, cloudSrvPort);
-			Console.WriteLine(temp);
-			return temp;
+			string result = string.Format("{{\"host\":\"{0}\", \"port\":{1}}}", cloudSrvHost, cloudSrvPort);
+			Console.WriteLine(result);
+			return result;
 		}
 		public static string CloudResponse(HttpListenerRequest request)
 		{
@@ -32,19 +32,25 @@ namespace httpserver
 			//Console.ReadKey();
 			//ws.Stop();
 
-			WebServer redirectorSrv = new WebServer(RedirectorResponse, "http://localhost:8081/datashareaddress/");
+			WebServer redirectorSrv = new WebServer(
+				RedirectorResponse,
+				"application/json; charset=utf-8",
+				"http://localhost:8081/datashareaddress/");
 			Console.WriteLine("Redirector webserver starting.");
 			redirectorSrv.Run();
 
-			//WebServer cloudSrv = new WebServer(CloudResponse, string.Format("http://{0}:{1}/datashare/", cloudSrvHost, cloudSrvPort));
-			//Console.WriteLine("Cloud webserver starting.");
-			//cloudSrv.Run();
+			WebServer cloudSrv = new WebServer(
+				CloudResponse,
+				"text/html",
+				string.Format("http://{0}:{1}/datashare/", cloudSrvHost, cloudSrvPort));
+			Console.WriteLine("Cloud webserver starting.");
+			cloudSrv.Run();
 
 			Console.WriteLine("Press a key to quit.");
 			Console.ReadKey();
 
 			redirectorSrv.Stop();
-			//cloudSrv.Stop();
+			cloudSrv.Stop();
 		}
 	}
 }

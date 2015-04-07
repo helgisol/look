@@ -9,8 +9,9 @@ namespace httpserver
     {
         private readonly HttpListener _listener = new HttpListener();
         private readonly Func<HttpListenerRequest, string> _responderMethod;
+		private readonly string _contentType;
 
-        public WebServer(string[] prefixes, Func<HttpListenerRequest, string> method)
+		public WebServer(string[] prefixes, Func<HttpListenerRequest, string> method, string contentType)
         {
             if (!HttpListener.IsSupported)
                 throw new NotSupportedException(
@@ -30,10 +31,11 @@ namespace httpserver
 
             _responderMethod = method;
             _listener.Start();
+			_contentType = contentType;
         }
 
-        public WebServer(Func<HttpListenerRequest, string> method, params string[] prefixes)
-            : this(prefixes, method) { }
+        public WebServer(Func<HttpListenerRequest, string> method, string contentType, params string[] prefixes)
+            : this(prefixes, method, contentType) { }
 
         public void Run()
         {
@@ -54,7 +56,8 @@ namespace httpserver
 
                                 ctx.Response.ContentLength64 = buf.Length;
                                 ctx.Response.OutputStream.Write(buf, 0, buf.Length);
-								ctx.Response.ContentType = "application/json; charset=utf-8";
+
+								ctx.Response.ContentType = _contentType;
 							}
                             catch (Exception e) {
 								Console.WriteLine(e.ToString());
