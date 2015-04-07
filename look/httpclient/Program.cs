@@ -124,24 +124,19 @@ namespace httpclient
 
 		static async Task<string> ReadFromRedirectorSrvAsync(string uri)
 		{
-			// ... Target page.
-			//const string uri = "http://localhost:8081/datashareaddress/";
-
-			// ... Use HttpClient.
 			using (HttpClient client = new HttpClient())
-			using (HttpResponseMessage response = await client.GetAsync(uri))
-			using (HttpContent content = response.Content)
 			{
-				// ... Read the string.
-				string result = await content.ReadAsStringAsync();
+				return await client.GetStringAsync(uri);
+			}
+		}
 
-				// ... Display the result.
-				if (result != null)
-				{
-					//Console.WriteLine(result);
-				}
-
-				return result;
+		static async Task<bool> SendMessagrToCloudSrvAsync(string uri, string msg)
+		{
+			using (HttpClient client = new HttpClient())
+			using (HttpContent httpContent = new StringContent(msg, Encoding.UTF8, "application/json"))
+			{
+				HttpResponseMessage x = await client.PostAsync(uri, httpContent);
+				return x.IsSuccessStatusCode;
 			}
 		}
 
@@ -164,17 +159,15 @@ namespace httpclient
 			DataContractJsonSerializer jsonDataShareMessage = new DataContractJsonSerializer(typeof(DataShareMessage));
 			MemoryStream streamDataShareMessage = new MemoryStream();
 			jsonDataShareMessage.WriteObject(streamDataShareMessage, msg);
-
-			streamDataShareMessage.Position = 0;
-			StreamReader sr = new StreamReader(streamDataShareMessage);
-			Console.Write("JSON form of DataShareMessage object: ");
-			Console.WriteLine(sr.ReadToEnd());
+			string dataShareMessageStr = Encoding.UTF8.GetString(streamDataShareMessage.ToArray());
+			Console.WriteLine("\ndataShareMessageStr: " + dataShareMessageStr);
 
 
-
-			Task<string> cloudTask = ReadFromRedirectorSrvAsync(string.Format("http://{0}:{1}/datashare/", address.Host, address.Port));
+			Task<bool> cloudTask = SendMessagrToCloudSrvAsync(
+				string.Format("http://{0}:{1}/datashare/", address.Host, address.Port),
+				dataShareMessageStr);
 			cloudTask.Wait();
-			string cloudStr = cloudTask.Result;
+			bool cloudStr = cloudTask.Result;
 			Console.WriteLine("cloudStr: " + cloudStr);
 
 

@@ -21,6 +21,21 @@ namespace httpserver
 		}
 		public static string CloudResponse(HttpListenerRequest request)
 		{
+			if (request.HttpMethod != "POST" || !request.HasEntityBody)
+			{
+				return "Error";
+			}
+
+			string msg;
+			using (System.IO.Stream body = request.InputStream)
+			{
+				using (System.IO.StreamReader reader = new System.IO.StreamReader(body, request.ContentEncoding))
+				{
+					msg = reader.ReadToEnd();
+				}
+			}
+			Console.WriteLine("cloud msg: " + msg);
+
 			return string.Format("<HTML><BODY>My web page.<br>{0}</BODY></HTML>", DateTime.Now);
 		}
 
