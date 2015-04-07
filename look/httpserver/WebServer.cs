@@ -49,13 +49,17 @@ namespace httpserver
                             var ctx = c as HttpListenerContext;
                             try
                             {
-                                string rstr = _responderMethod(ctx.Request);
+								string rstr = _responderMethod(ctx.Request);
                                 byte[] buf = Encoding.UTF8.GetBytes(rstr);
+
                                 ctx.Response.ContentLength64 = buf.Length;
                                 ctx.Response.OutputStream.Write(buf, 0, buf.Length);
-                            }
-                            catch { } // suppress any exceptions
-                            finally
+								ctx.Response.ContentType = "application/json; charset=utf-8";
+							}
+                            catch (Exception e) {
+								Console.WriteLine(e.ToString());
+							} // suppress any exceptions
+							finally
                             {
                                 // always close the stream
                                 ctx.Response.OutputStream.Close();
