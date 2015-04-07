@@ -20,10 +20,9 @@ namespace httpclient
                 string result = await content.ReadAsStringAsync();
 
                 // ... Display the result.
-                if (result != null &&
-                result.Length >= 50)
+                if (result != null && result.Length >= 50)
                 {
-                    Console.WriteLine(result.Substring(0, 50) + "...");
+                    Console.WriteLine(result.Substring(0, 500) + "...");
                 }
             }
         }
