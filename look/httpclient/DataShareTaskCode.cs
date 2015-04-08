@@ -19,12 +19,12 @@ namespace httpclient
 				cloudSrvAddressStr = await redirectorClient.GetStringAsync(redirectorSrvUri);
 			}
 
-			Console.WriteLine("cloudSrvAddressStr: " + cloudSrvAddressStr);
+			//Console.WriteLine("cloudSrvAddressStr: " + cloudSrvAddressStr);
 
 			DataContractJsonSerializer jsonDataShareData = new DataContractJsonSerializer(typeof(CloudSrvAddress));
 			CloudSrvAddress address = (CloudSrvAddress)jsonDataShareData.ReadObject(new MemoryStream(Encoding.UTF8.GetBytes(cloudSrvAddressStr)));
 
-			Console.WriteLine("address.host: " + address.Host.ToString() + ", address.port: " + address.Port.ToString());
+			//Console.WriteLine("address.host: " + address.Host.ToString() + ", address.port: " + address.Port.ToString());
 
 			return string.Format("http://{0}:{1}/datashare/", address.Host, address.Port);
         }
@@ -55,7 +55,7 @@ namespace httpclient
 				cloudTask.Wait();
 				bool cloudResult = cloudTask.Result;
 
-				Console.WriteLine("cloudResult: " + cloudResult);
+				//Console.WriteLine("cloudResult: " + cloudResult);
 
 				if (!cloudResult)
 				{

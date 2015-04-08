@@ -36,17 +36,29 @@ namespace httpclient
 				"1.0.free",
 				"http://localhost:8081/datashareaddress/");
 
-			for (int i = 0; i < 10000; i++)
+			TaskStatus status = TaskStatus.Faulted;
+            for (int i = 0; i < 1000; i++)
 			{
 				//Console.WriteLine("i: " + i + ", dataShare.LookBlock: " + dataShare.LookBlock);
-				Console.Write(i);
+				Console.Write(i + ", ");
 
 				if (i % 100 == 0)
 				{
+					Console.WriteLine("\n*i: " + i + ", status: " + status);
 					dataShare.ProccessData("aaa", new List<DataShareImage> { });
 				}
+				else
+				{
+					dataShare.ProccessData("", new List<DataShareImage> { });
+				}
 
-			}
+				TaskStatus statusNew = dataShare.GetTaskStatus();
+				if (/*statusNew == TaskStatus.RanToCompletion ||*/ statusNew != status)
+				{
+					Console.WriteLine("\ni: " + i + ", status: " + status + ", statusNew: " + statusNew);
+				}
+				status = statusNew;
+            }
 
 			dataShare.Dispose();
 
