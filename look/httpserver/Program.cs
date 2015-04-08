@@ -36,7 +36,7 @@ namespace httpserver
 			}
 			Console.WriteLine("cloud msg: " + msg);
 
-			return string.Format("<HTML><BODY>My web page.<br>{0}</BODY></HTML>", DateTime.Now);
+			return "<HTML><BODY>OK</BODY></HTML>";
 		}
 
 		static void Main(string[] args)
