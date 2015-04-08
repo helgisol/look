@@ -51,7 +51,7 @@ namespace httpclient
 	}
 
 	[DataContract]
-	internal class DataShareImage
+	public class DataShareImage
 	{
 		[DataMember]
 		internal int id = 0;

@@ -44,7 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CloudSrvAddress.cs" />
+    <Compile Include="DataShare.cs" />
     <Compile Include="DataShareMessage.cs" />
+    <Compile Include="DataShareTaskCode.cs" />
+    <Compile Include="DataShareTaskState.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
