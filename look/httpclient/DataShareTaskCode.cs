@@ -42,10 +42,27 @@ namespace httpclient
 		{
 			if (String.IsNullOrEmpty(state.CloudSrvUri))
 			{
-				Task<string> redirectorTask = ReadCloudSrvUrl(state.RedirectorSrvUri);
-				redirectorTask.Wait();
-				state.CloudSrvUri = redirectorTask.Result;
-			}
+				for (int i = 0; i < 5; i++)
+				{
+					DateTime startTime = DateTime.Now;
+					try
+					{
+						Task<string> redirectorTask = ReadCloudSrvUrl(state.RedirectorSrvUri);
+						redirectorTask.Wait();
+						state.CloudSrvUri = redirectorTask.Result;
+						break;
+					}
+					catch
+					{
+						if (i == 4)
+						{
+							return false;
+						}
+						TimeSpan timeDiff = DateTime.Now - startTime;
+						double timeDiffMs = timeDiff.TotalMilliseconds;
+					}
+				}
+            }
 
 			foreach (string dataStr in state.DataList)
 			{
