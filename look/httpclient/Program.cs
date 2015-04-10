@@ -13,7 +13,6 @@ namespace httpclient
 		static void Main(string[] args)
         {
 			DataShare dataShare = new DataShare(
-				DataShare.LookLicenseType.Free,
 				Guid.NewGuid().ToString(),
 				"1.0.free",
 				"http://localhost:8081/datashareaddress/");

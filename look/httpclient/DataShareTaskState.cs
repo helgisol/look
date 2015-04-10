@@ -7,27 +7,25 @@ using System.Threading.Tasks;
 
 namespace httpclient
 {
-	class DataShareTaskState
+	internal class DataShareTaskState
 	{
-		public string LookGUID { get; }
+		internal string RedirectorSrvUri { get; }
 
-		public string LookVersion { get; }
+        internal string CloudSrvUri { get; set; }
 
-		public string RedirectorSrvUri { get; }
+        internal HttpClient CloudClient { get; set; }
 
-		public List<string> DataList { get; set; }
+        public string Message { get; set; }
 
-		public string CloudSrvUri { get; set; }
-
-		public HttpClient CloudClient { get; set; }
-
-		public DataShareTaskState(string lookGUID, string lookVersion, string redirectorSrvUri)
+        public DataShareTaskState(string redirectorSrvUri)
 		{
-			LookGUID = lookGUID;
-            LookVersion = lookVersion;
 			RedirectorSrvUri = redirectorSrvUri;
-			DataList = new List<string>();
 			CloudClient = new HttpClient();
         }
-	}
+
+        public void Dispose()
+        {
+            CloudClient.Dispose();
+        }
+    }
 }

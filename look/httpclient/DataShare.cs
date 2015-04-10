@@ -12,36 +12,49 @@ namespace httpclient
 {
 	public class DataShare
 	{
-		public enum LookLicenseType { Free, Pro };
+        public enum DataShareState { Worked, Error };
 
-		public enum LookBlockStatus { Block, Unblock };
+        private enum DataShareInternalState { Worked, Error, Reconnect };
 
-        private enum DataShareState { Worked, Error };
+        private DataShareInternalState InternalState { get; set; }
 
-        private LookLicenseType LookLicense { get; set; }
+        private DataShareState ExternalState
+        {
+            get
+            {
+                if (InternalState == DataShareInternalState.Worked)
+                {
+                    return DataShareState.Worked;
+                }
+                else
+                {
+                    return DataShareState.Error;
+                }
+            }
+        }
 
-		private List<string> DataList { get; set; }
+        private string LookGUID { get; }
 
-		private LookBlockStatus LookBlock { get; set; }
+        private string LookVersion { get; }
 
-        private DataShareState State { get; set; }
+        private List<string> DataList { get; set; }
 
         private DataShareTaskState taskState;
 
 		private Task<bool> task;
 
-        private Timer delayTimer;
+        //private Timer delayTimer;
 
 		public DataShare(
-			LookLicenseType lookLicense,
 			string lookGUID,
 			string lookVersion,
 			string redirectorSrvUri)
 		{
-			LookLicense = lookLicense;
-			LookBlock = LookBlockStatus.Unblock;
-			DataList = new List<string>();
-            taskState = new DataShareTaskState(lookGUID, lookVersion, redirectorSrvUri);
+            InternalState = DataShareInternalState.Worked;
+            LookGUID = lookGUID;
+            LookVersion = lookVersion;
+            DataList = new List<string>();
+            taskState = new DataShareTaskState(redirectorSrvUri);
 			task = new Task<bool>(state => DataShareTaskCode.TaskProccessData((DataShareTaskState)state), taskState);
         }
 
@@ -59,20 +72,24 @@ namespace httpclient
 
         private void DelayTimerCallback(Object state)
         {
-            State = DataShareState.Worked;
+            //State = DataShareState.Worked;
         }
 
-        public LookBlockStatus ProccessData(string nowDataStr, List<DataShareImage> images)
-		{
-            if (LookBlock == LookBlockStatus.Block)
-			{
-                //if (LookLicense == LookLicenseType.Pro && delayTimer == null)
-                //{
-                //    delayTimer = new Timer(DelayTimerCallback, null, 1 * 60 * 60 * 1000, Timeout.Infinite);
-                //}
+        static private string CreateMessage(List<string> DataList)
+        {
+            return "";
+        }
 
-                return LookBlock;
-			}
+        public DataShareState ProccessData(string nowDataStr, List<DataShareImage> images)
+		{
+            if (InternalState == DataShareInternalState.Error)
+            {
+                return ExternalState;
+            }
+            else if (InternalState == DataShareInternalState.Error || InternalState == DataShareInternalState.Reconnect)
+            {
+                return ExternalState;
+            }
 
             //if (delayTimer != null)
             //{
@@ -80,49 +97,51 @@ namespace httpclient
             //    delayTimer = null;
             //}
 
-            if (((task.Status == TaskStatus.RanToCompletion && !task.Result) ||
-				task.Status == TaskStatus.Faulted || task.Status == TaskStatus.Canceled) && LookLicense == LookLicenseType.Free)
-			{
-				LookBlock = LookBlockStatus.Block;
-				return LookBlock;
-			}
 
-			if (String.IsNullOrEmpty(nowDataStr))
-			{
-				if (DataList.Count == 0)
-				{
-					return LookBlock;
-				}
-			}
-			else
-			{
-				string dataShareDataStr = CreateDataShareDataStr(nowDataStr, images);
 
-				//Console.WriteLine("\ndataShareDataStr: " + dataShareDataStr);
+            //         if (((task.Status == TaskStatus.RanToCompletion && !task.Result) ||
+            //	task.Status == TaskStatus.Faulted || task.Status == TaskStatus.Canceled) && LookLicense == LookLicenseType.Free)
+            //{
+            //	LookBlock = LookBlockStatus.Block;
+            //	return LookBlock;
+            //}
 
-				DataList.Add(dataShareDataStr);
-			}
+            //if (String.IsNullOrEmpty(nowDataStr))
+            //{
+            //	if (DataList.Count == 0)
+            //	{
+            //		return LookBlock;
+            //	}
+            //}
+            //else
+            //{
+            //	string dataShareDataStr = CreateDataShareDataStr(nowDataStr, images);
 
-			if (task.Status == TaskStatus.Running)
-			{
-				return LookBlock;
-			}
+            //	//Console.WriteLine("\ndataShareDataStr: " + dataShareDataStr);
 
-			if (task.Status == TaskStatus.RanToCompletion)
-			{
-				task = new Task<bool>(state => DataShareTaskCode.TaskProccessData((DataShareTaskState)state), taskState);
-			}
+            //	DataList.Add(dataShareDataStr);
+            //}
 
-			if (task.Status == TaskStatus.Created)
-			{
-				taskState.DataList.Clear();
-				taskState.DataList.AddRange(DataList);
-				DataList.Clear();
+            //if (task.Status == TaskStatus.Running)
+            //{
+            //	return LookBlock;
+            //}
 
-				task.Start();
-            }
+            //if (task.Status == TaskStatus.RanToCompletion)
+            //{
+            //	task = new Task<bool>(state => DataShareTaskCode.TaskProccessData((DataShareTaskState)state), taskState);
+            //}
 
-			return LookBlock;
+            //if (task.Status == TaskStatus.Created)
+            //{
+            //	taskState.DataList.Clear();
+            //	taskState.DataList.AddRange(DataList);
+            //	DataList.Clear();
+
+            //	task.Start();
+            //         }
+
+            return ExternalState;
 		}
 
 		internal TaskStatus GetTaskStatus()
@@ -132,7 +151,7 @@ namespace httpclient
 
 		public void Dispose()
 		{
-			taskState.CloudClient.Dispose();
+			taskState.Dispose();
         }
 	}
 }
