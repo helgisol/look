@@ -14,9 +14,9 @@ namespace httpclient
 	{
         public enum DataShareState { Worked, Error };
 
-        private enum DataShareInternalState { Worked, Error, Reconnect };
+        public enum DataShareInternalState { Worked, Error, Reconnect };
 
-        private DataShareInternalState InternalState { get; set; }
+        public DataShareInternalState InternalState { get; set; }
 
         private DataShareState ExternalState
         {
@@ -33,17 +33,19 @@ namespace httpclient
             }
         }
 
-        private string LookGUID { get; }
+        private string LookGUID { get; set; }
 
-        private string LookVersion { get; }
+        private string LookVersion { get; set; }
 
         private List<string> DataList { get; set; }
 
-        private DataShareTaskState taskState;
+        private DataShareTaskState TaskState { get; set; }
 
-		private Task<bool> task;
+        private Task<bool> SendingTask { get; set; }
 
-        //private Timer delayTimer;
+        private Timer DelayTimer { get; set; }
+
+        private CancellationTokenSource cts;
 
 		public DataShare(
 			string lookGUID,
@@ -54,8 +56,10 @@ namespace httpclient
             LookGUID = lookGUID;
             LookVersion = lookVersion;
             DataList = new List<string>();
-            taskState = new DataShareTaskState(redirectorSrvUri);
-			task = new Task<bool>(state => DataShareTaskCode.TaskProccessData((DataShareTaskState)state), taskState);
+            TaskState = new DataShareTaskState(redirectorSrvUri);
+            cts = new CancellationTokenSource(10 * 60 * 1000);
+            SendingTask = new Task<bool>(() => DataShareTaskCode.TaskProccessData(cts.Token, TaskState), cts.Token);
+            //Task cwt = SendingTask.ContinueWith(task => new Timer(DelayTimerCallback, null, 1 * 1 * 1000, Timeout.Infinite)); 
         }
 
 		private string CreateDataShareDataStr(string nowDataStr, List<DataShareImage> images)
@@ -70,14 +74,16 @@ namespace httpclient
 			return string.Format("{{now:{0},imgs:{1}}}", nowDataStr, dataShareImagesStr);
 		}
 
-        private void DelayTimerCallback(Object state)
+        private string CreateMessage()
         {
-            //State = DataShareState.Worked;
+            return string.Format("{{look:\"{0}\",ver:\"{1}\",data:[{2}]}}", LookGUID, LookVersion, String.Join(",", DataList));
         }
 
-        static private string CreateMessage(List<string> DataList)
+        private void DelayTimerCallback(Object aState)
         {
-            return "";
+            InternalState = DataShareInternalState.Reconnect;
+            SendingTask = new Task<bool>(() => DataShareTaskCode.TaskProccessData(cts.Token, TaskState), cts.Token);
+            SendingTask.Start();
         }
 
         public DataShareState ProccessData(string nowDataStr, List<DataShareImage> images)
@@ -86,72 +92,83 @@ namespace httpclient
             {
                 return ExternalState;
             }
-            else if (InternalState == DataShareInternalState.Error || InternalState == DataShareInternalState.Reconnect)
+
+            if (DelayTimer != null)
+            {
+                DelayTimer.Dispose();
+                DelayTimer = null;
+            }
+
+            if (SendingTask.Status == TaskStatus.Faulted || SendingTask.Status == TaskStatus.Canceled || (SendingTask.Status == TaskStatus.RanToCompletion && !SendingTask.Result))
+            {
+                InternalState = DataShareInternalState.Error;
+                DelayTimer = new Timer(DelayTimerCallback, null, 1 * 1 * 1000, Timeout.Infinite);
+                return ExternalState;
+            }
+
+            if (InternalState == DataShareInternalState.Reconnect)
+            {
+                if (SendingTask.Status != TaskStatus.RanToCompletion)
+                {
+                    return ExternalState;
+                }
+                else
+                {
+                    InternalState = DataShareInternalState.Worked;
+                }
+            }
+
+            if (String.IsNullOrEmpty(nowDataStr))
+            {
+                if (DataList.Count == 0)
+                {
+                    return ExternalState;
+                }
+            }
+            else
+            {
+                if (DataList.Count < 10000)
+                {
+                    string dataShareDataStr = CreateDataShareDataStr(nowDataStr, images);
+                    //Console.WriteLine("\ndataShareDataStr: " + dataShareDataStr);
+                    DataList.Add(dataShareDataStr);
+                }
+            }
+
+            if (SendingTask.Status == TaskStatus.Running)
             {
                 return ExternalState;
             }
 
-            //if (delayTimer != null)
-            //{
-            //    delayTimer.Dispose();
-            //    delayTimer = null;
-            //}
+            if (SendingTask.Status == TaskStatus.RanToCompletion)
+            {
+                SendingTask = new Task<bool>(() => DataShareTaskCode.TaskProccessData(cts.Token, TaskState), cts.Token);
+            }
 
-
-
-            //         if (((task.Status == TaskStatus.RanToCompletion && !task.Result) ||
-            //	task.Status == TaskStatus.Faulted || task.Status == TaskStatus.Canceled) && LookLicense == LookLicenseType.Free)
-            //{
-            //	LookBlock = LookBlockStatus.Block;
-            //	return LookBlock;
-            //}
-
-            //if (String.IsNullOrEmpty(nowDataStr))
-            //{
-            //	if (DataList.Count == 0)
-            //	{
-            //		return LookBlock;
-            //	}
-            //}
-            //else
-            //{
-            //	string dataShareDataStr = CreateDataShareDataStr(nowDataStr, images);
-
-            //	//Console.WriteLine("\ndataShareDataStr: " + dataShareDataStr);
-
-            //	DataList.Add(dataShareDataStr);
-            //}
-
-            //if (task.Status == TaskStatus.Running)
-            //{
-            //	return LookBlock;
-            //}
-
-            //if (task.Status == TaskStatus.RanToCompletion)
-            //{
-            //	task = new Task<bool>(state => DataShareTaskCode.TaskProccessData((DataShareTaskState)state), taskState);
-            //}
-
-            //if (task.Status == TaskStatus.Created)
-            //{
-            //	taskState.DataList.Clear();
-            //	taskState.DataList.AddRange(DataList);
-            //	DataList.Clear();
-
-            //	task.Start();
-            //         }
+            if (SendingTask.Status == TaskStatus.Created)
+            {
+                TaskState.Message = CreateMessage();
+                DataList.Clear();
+                SendingTask.Start();
+            }
 
             return ExternalState;
 		}
 
+
+        public void Stop()
+        {
+            cts.Cancel();
+        }
+
 		internal TaskStatus GetTaskStatus()
 		{
-			return task.Status;
+			return SendingTask.Status;
         }
 
 		public void Dispose()
 		{
-			taskState.Dispose();
+			TaskState.Dispose();
         }
 	}
 }

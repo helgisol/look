@@ -37,17 +37,18 @@ namespace httpclient
 			}
 		}
 
-		public static bool TaskProccessData(DataShareTaskState state)
+        public static bool TaskProccessData(CancellationToken ct, DataShareTaskState state)
 		{
             const int redirectorDelayMs = 1 * 1000;
             const int cloudDelayMs = 1 * 1000;
-            const int redirectorAttemptCount = 5;
-            const int cloudAttemptCount = 10;
+            const int redirectorAttemptCount = 1;
+            const int cloudAttemptCount = 1;
 
             if (String.IsNullOrEmpty(state.CloudSrvUri))
 			{
 				for (int i = 0; i < redirectorAttemptCount; i++)
 				{
+                    ct.ThrowIfCancellationRequested();
 					DateTime startTime = DateTime.Now;
 					try
 					{
@@ -73,14 +74,13 @@ namespace httpclient
 				}
             }
 
-            string cloudMsg = string.Format("{{look:\"{0}\",ver:\"{1}\",data:[{2}]}}",
-                state.LookGUID, state.LookVersion, String.Join(",", state.DataList));
             for (int i = 0; i < cloudAttemptCount; i++)
             {
                 DateTime startTime = DateTime.Now;
                 try
                 {
-                    Task<bool> cloudTask = SendMessagrToCloudSrvAsync(state.CloudClient, state.CloudSrvUri, cloudMsg);
+                    ct.ThrowIfCancellationRequested();
+                    Task<bool> cloudTask = SendMessagrToCloudSrvAsync(state.CloudClient, state.CloudSrvUri, state.Message);
                     cloudTask.Wait();
                     bool cloudResult = cloudTask.Result;
                     //Console.WriteLine("cloudResult: " + cloudResult);

@@ -5,6 +5,7 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace httpclient
 {
@@ -17,15 +18,16 @@ namespace httpclient
 				"1.0.free",
 				"http://localhost:8081/datashareaddress/");
 
-			TaskStatus status = TaskStatus.Faulted;
-            for (int i = 0; i < 1000; i++)
+            TaskStatus taskStatus = TaskStatus.Faulted;
+            for (int i = 0; i < 100000; i++)
 			{
 				//Console.WriteLine("i: " + i + ", dataShare.LookBlock: " + dataShare.LookBlock);
-				Console.Write(i + ", ");
+				//Console.Write(i + ", ");
+                Thread.Sleep(100);
 
 				if (i % 100 == 0)
 				{
-					Console.WriteLine("\n*i: " + i + ", status: " + status);
+                    Console.WriteLine("\n*i: " + i + ", taskStatus: " + taskStatus + ", InternalState: " + dataShare.InternalState);
 					dataShare.ProccessData("aaa", new List<DataShareImage> { });
 				}
 				else
@@ -33,12 +35,12 @@ namespace httpclient
 					dataShare.ProccessData("", new List<DataShareImage> { });
 				}
 
-				TaskStatus statusNew = dataShare.GetTaskStatus();
-				if (/*statusNew == TaskStatus.RanToCompletion ||*/ statusNew != status)
+				TaskStatus taskStatusNew = dataShare.GetTaskStatus();
+                if (/*statusNew == TaskStatus.RanToCompletion ||*/ taskStatusNew != taskStatus)
 				{
-					Console.WriteLine("\ni: " + i + ", status: " + status + ", statusNew: " + statusNew);
+                    Console.WriteLine("\ni: " + i + ", taskStatus: " + taskStatus + ", taskStatusNew: " + taskStatusNew);
 				}
-				status = statusNew;
+                taskStatus = taskStatusNew;
             }
 
 			dataShare.Dispose();

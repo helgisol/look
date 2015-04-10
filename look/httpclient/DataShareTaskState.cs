@@ -9,7 +9,7 @@ namespace httpclient
 {
 	internal class DataShareTaskState
 	{
-		internal string RedirectorSrvUri { get; }
+        internal string RedirectorSrvUri { get; set; }
 
         internal string CloudSrvUri { get; set; }
 
