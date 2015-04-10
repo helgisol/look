@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace httpclient
@@ -15,15 +16,21 @@ namespace httpclient
 
 		public enum LookBlockStatus { Block, Unblock };
 
-		private LookLicenseType LookLicense { get; set; }
+        private enum DataShareState { Worked, Error };
+
+        private LookLicenseType LookLicense { get; set; }
 
 		private List<string> DataList { get; set; }
 
 		private LookBlockStatus LookBlock { get; set; }
 
-		private DataShareTaskState taskState;
+        private DataShareState State { get; set; }
+
+        private DataShareTaskState taskState;
 
 		private Task<bool> task;
+
+        private Timer delayTimer;
 
 		public DataShare(
 			LookLicenseType lookLicense,
@@ -50,14 +57,30 @@ namespace httpclient
 			return string.Format("{{now:{0},imgs:{1}}}", nowDataStr, dataShareImagesStr);
 		}
 
-		public LookBlockStatus ProccessData(string nowDataStr, List<DataShareImage> images)
+        private void DelayTimerCallback(Object state)
+        {
+            State = DataShareState.Worked;
+        }
+
+        public LookBlockStatus ProccessData(string nowDataStr, List<DataShareImage> images)
 		{
-			if (LookBlock == LookBlockStatus.Block)
+            if (LookBlock == LookBlockStatus.Block)
 			{
-				return LookBlock;
+                //if (LookLicense == LookLicenseType.Pro && delayTimer == null)
+                //{
+                //    delayTimer = new Timer(DelayTimerCallback, null, 1 * 60 * 60 * 1000, Timeout.Infinite);
+                //}
+
+                return LookBlock;
 			}
 
-			if (((task.Status == TaskStatus.RanToCompletion && !task.Result) ||
+            //if (delayTimer != null)
+            //{
+            //    delayTimer.Dispose();
+            //    delayTimer = null;
+            //}
+
+            if (((task.Status == TaskStatus.RanToCompletion && !task.Result) ||
 				task.Status == TaskStatus.Faulted || task.Status == TaskStatus.Canceled) && LookLicense == LookLicenseType.Free)
 			{
 				LookBlock = LookBlockStatus.Block;
@@ -97,12 +120,12 @@ namespace httpclient
 				DataList.Clear();
 
 				task.Start();
-			}
+            }
 
 			return LookBlock;
 		}
 
-		public TaskStatus GetTaskStatus()
+		internal TaskStatus GetTaskStatus()
 		{
 			return task.Status;
         }

@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace httpclient
 {
-	class DataShareTaskCode
+    class DataShareTaskCode
 	{
 		static async Task<string> ReadCloudSrvUrl(string redirectorSrvUri)
 		{
@@ -33,16 +32,21 @@ namespace httpclient
 		{
 			using (HttpContent httpContent = new StringContent(msg, Encoding.UTF8, "application/json"))
 			{
-				HttpResponseMessage x = await client.PostAsync(uri, httpContent);
-				return x.IsSuccessStatusCode;
+				HttpResponseMessage resp = await client.PostAsync(uri, httpContent);
+				return resp.IsSuccessStatusCode;
 			}
 		}
 
 		public static bool TaskProccessData(DataShareTaskState state)
 		{
-			if (String.IsNullOrEmpty(state.CloudSrvUri))
+            const int redirectorDelayMs = 1 * 1000;
+            const int cloudDelayMs = 1 * 1000;
+            const int redirectorAttemptCount = 5;
+            const int cloudAttemptCount = 10;
+
+            if (String.IsNullOrEmpty(state.CloudSrvUri))
 			{
-				for (int i = 0; i < 5; i++)
+				for (int i = 0; i < redirectorAttemptCount; i++)
 				{
 					DateTime startTime = DateTime.Now;
 					try
@@ -54,33 +58,63 @@ namespace httpclient
 					}
 					catch
 					{
-						if (i == 4)
+						if (i == redirectorAttemptCount - 1)
 						{
 							return false;
 						}
 						TimeSpan timeDiff = DateTime.Now - startTime;
-						double timeDiffMs = timeDiff.TotalMilliseconds;
+						int timeDiffMs = (int)timeDiff.TotalMilliseconds;
+                        int delay = redirectorDelayMs - timeDiffMs;
+                        if (delay > 0)
+                        {
+                            Thread.Sleep(delay);
+                        }
 					}
 				}
             }
 
-			foreach (string dataStr in state.DataList)
-			{
-				string msg = string.Format("{{look:\"{0}\",ver:\"{1}\",data:{2}}}", state.LookGUID, state.LookVersion, dataStr);
+            string cloudMsg = string.Format("{{look:\"{0}\",ver:\"{1}\",data:[{2}]}}",
+                state.LookGUID, state.LookVersion, String.Join(",", state.DataList));
+            for (int i = 0; i < cloudAttemptCount; i++)
+            {
+                DateTime startTime = DateTime.Now;
+                try
+                {
+                    Task<bool> cloudTask = SendMessagrToCloudSrvAsync(state.CloudClient, state.CloudSrvUri, cloudMsg);
+                    cloudTask.Wait();
+                    bool cloudResult = cloudTask.Result;
+                    //Console.WriteLine("cloudResult: " + cloudResult);
+                    return cloudResult;
+                }
+                catch
+                {
+                    if (i == cloudAttemptCount - 1)
+                    {
+                        return false;
+                    }
+                    if (i == 0)
+                    {
+                        try
+                        {
+                            Task<string> redirectorTask = ReadCloudSrvUrl(state.RedirectorSrvUri);
+                            redirectorTask.Wait();
+                            state.CloudSrvUri = redirectorTask.Result;
+                        }
+                        catch
+                        {
+                        }
+                    }
+                    TimeSpan timeDiff = DateTime.Now - startTime;
+                    int timeDiffMs = (int)timeDiff.TotalMilliseconds;
+                    int delay = cloudDelayMs - timeDiffMs;
+                    if (delay > 0)
+                    {
+                        Thread.Sleep(delay);
+                    }
+                }
+            }
 
-				Task<bool> cloudTask = SendMessagrToCloudSrvAsync(state.CloudClient, state.CloudSrvUri, msg);
-				cloudTask.Wait();
-				bool cloudResult = cloudTask.Result;
-
-				//Console.WriteLine("cloudResult: " + cloudResult);
-
-				if (!cloudResult)
-				{
-					return false;
-				}
-			}
-
-			return true;
+			return false;
 		}
 
 	}
