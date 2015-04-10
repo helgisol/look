@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.22609.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "httpserver", "httpserver\httpserver.csproj", "{F62C0AB2-3590-4E45-BBA4-45497869984A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "httpclient", "httpclient\httpclient.csproj", "{FB7BB28C-95AA-4728-873F-531E466548A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wsserver", "wsserver\wsserver.csproj", "{A6C3361D-8C88-4E31-A1A6-6157053F701D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wsclient", "wsclient\wsclient.csproj", "{04AE7E41-6F68-4AA7-874F-A4D597C1CCC9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{FB7BB28C-95AA-4728-873F-531E466548A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB7BB28C-95AA-4728-873F-531E466548A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB7BB28C-95AA-4728-873F-531E466548A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6C3361D-8C88-4E31-A1A6-6157053F701D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6C3361D-8C88-4E31-A1A6-6157053F701D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6C3361D-8C88-4E31-A1A6-6157053F701D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6C3361D-8C88-4E31-A1A6-6157053F701D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04AE7E41-6F68-4AA7-874F-A4D597C1CCC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04AE7E41-6F68-4AA7-874F-A4D597C1CCC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04AE7E41-6F68-4AA7-874F-A4D597C1CCC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04AE7E41-6F68-4AA7-874F-A4D597C1CCC9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
